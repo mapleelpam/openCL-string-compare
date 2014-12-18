@@ -17,7 +17,7 @@
 
 #include "performance.h"
 
-const int LENGTH_OF_TEXT = 102400; 
+const int LENGTH_OF_TEXT = 202400; 
 const int LENGTH_OF_PATTERN = 50;
 
 #define uchar unsigned char
@@ -129,7 +129,7 @@ void test_in_cpu( char* text, char* pattern )
 
 	p.stop();
 
-	printf(" done Execution (CPU) time = (%u,%u), result = %d\n", p.report_sec(), p.report_nsec(),count);
+	printf(" done Execution (CPU) time = (%u,%u), result = %d\n", p.report_sec(), p.report_usec(),count);
 }
 
 void run() {
@@ -161,7 +161,7 @@ void run() {
 
 
 	p.stop();
-	printf(" done Execution (CPU) time = (%u,%u), result = %d\n", p.report_sec(), p.report_nsec(),result_c[0]);
+	printf(" done Execution (OpenCL Channel) time = (%u,%u), result = %d\n", p.report_sec(), p.report_usec(),result_c[0]);
 
 	test_in_cpu( text_c, pattern_c );
 

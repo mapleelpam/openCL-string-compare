@@ -10,7 +10,7 @@ class Performance
 		void stop() {
 			gettimeofday(&_endtime, 0x0);
 		}
-		int report_nsec() {
+		int report_usec() {
 			return _endtime.tv_usec - _starttime.tv_usec;
 		}
 		int report_sec() {

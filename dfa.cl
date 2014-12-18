@@ -23,7 +23,7 @@ kernel void word_processor( __global const char *text, const int length)
 		char ch = text[idx];
 		if( ( ch == ' ' && word.length!= 0 ) || word.length > MAX_LENGTH_OF_WORD - 2 ) {
 			word.word[ word.length++ ] = 0;
-			printf(" send a word= %s\n", word.word );
+	//		printf(" send a word= %s\n", word.word );
 			write_channel_altera( WORD_CHANNEL, word );
 			word.length = 0;
 		} else if( ch == ' ' /*&& word.length== 0 */) { 
@@ -41,9 +41,9 @@ kernel void matching( __global const char *pattern, const int length /*length of
 		bool valid = false;
 		__private struct AWord word =  read_channel_nb_altera(WORD_CHANNEL, &valid);
 		if( valid ) {	
-			printf(" recv word = %s\n", word.word);
+		//	printf(" recv word = %s\n", word.word);
 			if( length == word.length ) {
-				printf(" is matching %s, %s\n", word.word, pattern );
+		//		printf(" is matching %s, %s\n", word.word, pattern );
 				bool same = true;
 				for( int idx = 0 ; idx < length ; idx ++ ) {
 					if( word.word[idx] != pattern[idx] ) {
