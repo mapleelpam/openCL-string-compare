@@ -11,8 +11,8 @@ channel uint  STOP1  __attribute__((depth(4)));
 channel uint  STOP2  __attribute__((depth(4))); 
 
 kernel void stop_all() {
-  write_channel_altera(STOP1, 1);
-  write_channel_altera(STOP2, 1);
+//  write_channel_altera(STOP1, 1);
+//  write_channel_altera(STOP2, 1);
 }
 
 kernel void text_processor( __global const char *text, const int length)
@@ -23,7 +23,9 @@ kernel void text_processor( __global const char *text, const int length)
 		write_channel_altera( TEXT_CHANNEL, text[idx] );
 //		printf(" text[%d] = %c\n", idx, text[idx] );
 	}
-	stop_all();
+	// stop_all();
+	write_channel_altera(STOP1, 1);
+	write_channel_altera(STOP2, 1);
 }
 
 kernel void word_processor( )
