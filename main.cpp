@@ -12,8 +12,12 @@
 #include <string.h>
 
 #include <time.h>
+#include <sys/time.h>
 
-const int LENGTH_OF_TEXT = 20240; 
+
+#include "performance.h"
+
+const int LENGTH_OF_TEXT = 102400; 
 const int LENGTH_OF_PATTERN = 50;
 
 #define uchar unsigned char
@@ -31,9 +35,10 @@ static cl_program program;
 static cl_int status;
 static cl_command_queue queue;
 
-static cl_mem text_buf, pattern_buf;
+static cl_mem text_buf, pattern_buf, result_buf;
 
 static char *text_c,*pattern_c;
+static char *result_c;
 
 int main( int argc, char** argv )
 {
@@ -64,6 +69,18 @@ cl_mem alloc_shared_buffer (size_t size, T **vptr) {
   return res;
 }
 
+void init_answers( char* text, char* pattern, int count )
+{
+	for( int idx = 0 ; idx < count ; idx ++ ) {
+		int position = rand() % ( LENGTH_OF_TEXT-LENGTH_OF_PATTERN )  + 1;
+
+		text[position - 1] = ' ';
+		for( int idx = 0 ; idx < LENGTH_OF_PATTERN-1; idx ++ ){
+			text[ position+ idx ] = pattern[ idx ] ;
+		}
+		text[ position+ LENGTH_OF_PATTERN - 1] = ' ';	
+	}	
+}
 
 void init_string( char* text, char* pattern )
 {
@@ -79,59 +96,76 @@ void init_string( char* text, char* pattern )
 	pattern[ LENGTH_OF_PATTERN-1 ] = 0 ;
 
 // create a :match case
+	init_answers( text, pattern, 10);
+/* 
 	text[49] = ' ';
 	for( int idx = 0 ; idx < LENGTH_OF_PATTERN-1; idx ++ ){
 		text[ 50 + idx ] = pattern[ idx ] ;
 	}
 	text[ 50 + LENGTH_OF_PATTERN - 1] = ' ';
+*/
 
 	printf(" pattern = %s, text = %s\n", pattern, text);
 }
 
+void test_in_cpu( char* text, char* pattern )
+{
+	Performance p;
+	p.start();
+
+	bool match = false;
+	int count = 0;
+	for( int n = 0 ; n < LENGTH_OF_TEXT - 1; n ++ ) { 
+		int m = 0;
+		if( n == 0 || text[n-1] == ' ' ) {
+			for( ; m < LENGTH_OF_PATTERN - 1; m ++ ) {
+				if( pattern[m] != text[n+m] )
+					break;
+			}
+		}
+		if( m == LENGTH_OF_PATTERN - 1 )
+			count ++;
+	}
+
+	p.stop();
+
+	printf(" done Execution (CPU) time = (%u,%u), result = %d\n", p.report_sec(), p.report_nsec(),count);
+}
+
 void run() {
-	time_t start_t, end_t;
-	double diff_t;
+	Performance p;
 
 	printf("Allocating buffers\n");
 
 	text_buf = alloc_shared_buffer<char> (LENGTH_OF_TEXT, &text_c);
 	pattern_buf= alloc_shared_buffer<char> (LENGTH_OF_PATTERN, &pattern_c);
+	result_buf= alloc_shared_buffer<char> (1, &result_c);
+	result_c[0] = 0;
 
 	init_string( text_c, pattern_c );
 
 	printf("Initializing kernels\n");
 	size_t task_dim = 1;
 	clKernelSet kernel_set (device, context, program);
-	kernel_set.addKernel ("text_processor", 1, &task_dim, text_buf, LENGTH_OF_TEXT);
-	kernel_set.addKernel ("word_processor", 1, &task_dim);
-	kernel_set.addKernel ("matching", 1, &task_dim, pattern_buf, LENGTH_OF_PATTERN);
+//	kernel_set.addKernel ("text_processor", 1, &task_dim, text_buf, LENGTH_OF_TEXT);
+//	kernel_set.addKernel ("word_processor", 1, &task_dim);
+	kernel_set.addKernel ("word_processor", 1, &task_dim, text_buf, LENGTH_OF_TEXT);
+	kernel_set.addKernel ("matching", 1, &task_dim, pattern_buf, LENGTH_OF_PATTERN, result_buf);
 
 	printf("Launching the kernel...\n");
-	time(&start_t);
+	p.start();
 	kernel_set.launch();
 
-#if 0  
-  // Enqueue 'stop' kernel when user want to exit
-  printf("Press any key to stop processing...\n");
-  getchar();
-
-  clKernelSet kernel_set_2 (device, context, program);
-  
-  kernel_set_2.addKernel ("stop", 1, &task_dim, fps_buf);
-  kernel_set_2.launch();
-//  kernel_set_2.finish();
-
-  printf("Stop kernel finished\n");
-#endif 
-  printf(" start waiting.... \n");
+	printf(" start waiting.... \n");
 	kernel_set.finish();
-//  kernel_set.waitEvent(2);  // watigin for mathcing
-  time(&end_t);
-  diff_t = difftime(end_t, start_t);
-  printf(" done Execution time = %f\n", diff_t);
 
 
-  return;
+	p.stop();
+	printf(" done Execution (CPU) time = (%u,%u), result = %d\n", p.report_sec(), p.report_nsec(),result_c[0]);
+
+	test_in_cpu( text_c, pattern_c );
+
+	return;
 }
 
 void init_platform() {
