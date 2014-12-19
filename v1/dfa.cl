@@ -37,23 +37,11 @@ kernel void word_processor( __global const char* restrict text, const int length
 kernel void matching( __global const char* restrict pattern, const int length /*length of pattern */ , __global char* restrict result )
 {
 	bool stop_processing = false;
+	int count = 0;
 	while( true ) {
 		bool valid = false;
 		__private struct AWord word =  read_channel_nb_altera(WORD_CHANNEL, &valid);
-		if( valid ) {	
-		//	printf(" recv word = %s\n", word.word);
-			if( length == word.length ) {
-		//		printf(" is matching %s, %s\n", word.word, pattern );
-				bool same = true;
-				for( int idx = 0 ; idx < length ; idx ++ ) {
-					if( word.word[idx] != pattern[idx] ) {
-						same = false;
-					}
-				}
-				if( same )
-					result[ 0 ] ++;	
-			} 
-		} else {
+		if( !valid ) {	
 
 			if( stop_processing == false )
 				read_channel_nb_altera(STOP,&stop_processing);
@@ -61,5 +49,19 @@ kernel void matching( __global const char* restrict pattern, const int length /*
 				break;
 			}
 		}
+		//printf(" recv word = %s\n", word.word);
+		if( length == word.length ) {
+			//printf(" is matching %s, %s\n", word.word, pattern );
+			bool same = true;
+			#pragma unrolll
+			for( int idx = 0 ; idx < length ; idx ++ ) {
+				if( word.word[idx] != pattern[idx] ) {
+					same = false;
+				}
+			}
+			if( same )
+				count ++;
+		} 
 	}
+	result[ 0 ] = count;
 }
