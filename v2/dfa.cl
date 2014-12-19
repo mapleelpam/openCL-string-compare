@@ -36,7 +36,6 @@ kernel void word_processor( __global const char *restrict text, const int length
 	stop_all();
 }
 
-
 __attribute__((num_compute_units(NUM_OF_TASK)))
 __attribute__((num_simd_work_items(NUM_OF_TASK)))
 __attribute__( (reqd_work_group_size( NUM_OF_TASK, 1, 1 ) ) )
