@@ -19,6 +19,8 @@ kernel void word_processor( __global const char* restrict text, const int length
 	bool stop_processing = false;
 	struct AWord word;
 	word.length = 0;
+
+	#pragma unrolll MAX_LENGTH_OF_WORD 
 	for( int idx = 0 ; idx<length; idx ++) {
 		char ch = text[idx];
 		if( ( ch == ' ' && word.length!= 0 ) || word.length > MAX_LENGTH_OF_WORD - 2 ) {
@@ -34,34 +36,44 @@ kernel void word_processor( __global const char* restrict text, const int length
 	write_channel_altera(STOP, 1);
 }
 
+bool string_compare( const char* a, const char* b, char length )
+{
+	bool same = true;
+	#pragma unrolll MAX_LENGTH_OF_WORD
+	for( int idx = 0 ; idx < length ; idx ++ ) {
+		if( a[idx] != b[idx] ) {
+			same = false;
+		}
+	}
+	return same;
+}
 kernel void matching( __global const char* restrict pattern, const int length /*length of pattern */ , __global char* restrict result )
 {
 	bool stop_processing = false;
 	int count = 0;
+	bool valid = false;
+	char _pattern[ MAX_LENGTH_OF_WORD ] ;
+	for( int idx; idx < length ; idx ++ ) {
+		_pattern[idx] = pattern[idx];
+	}
 	while( true ) {
-		bool valid = false;
 		__private struct AWord word =  read_channel_nb_altera(WORD_CHANNEL, &valid);
-		if( !valid ) {	
-
-			if( stop_processing == false )
-				read_channel_nb_altera(STOP,&stop_processing);
-			if(stop_processing ) {
-				break;
-			}
-		}
-		//printf(" recv word = %s\n", word.word);
-		if( length == word.length ) {
+		if( !valid && stop_processing ) {	
+			break;
+		} else if ( !valid ) {
+			// do nothing
+		} else if( length == word.length ) {
 			//printf(" is matching %s, %s\n", word.word, pattern );
-			bool same = true;
-			#pragma unrolll
-			for( int idx = 0 ; idx < length ; idx ++ ) {
-				if( word.word[idx] != pattern[idx] ) {
-					same = false;
-				}
-			}
-			if( same )
-				count ++;
+		//	bool same = string_compare( _pattern, word.word, word.length );
+		//	if( same )
+		//		count ++;
 		} 
+		
+		read_channel_nb_altera(STOP,&valid);
+		if( valid )
+			stop_processing = true;
 	}
 	result[ 0 ] = count;
 }
+
+
