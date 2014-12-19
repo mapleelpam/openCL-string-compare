@@ -16,7 +16,7 @@ kernel void stop_all() {
 }
 
 
-kernel void word_processor( __global const char *text, const int length)
+kernel void word_processor( __global const char *restrict text, const int length)
 {
 	bool stop_processing = false;
 	struct AWord word;
@@ -40,7 +40,7 @@ kernel void word_processor( __global const char *text, const int length)
 __attribute__((num_compute_units(NUM_OF_TASK)))
 __attribute__((num_simd_work_items(NUM_OF_TASK)))
 __attribute__( (reqd_work_group_size( NUM_OF_TASK, 1, 1 ) ) )
-kernel void matching( __global const char *pattern, const int length /*length of pattern */ , __global char* restrict result )
+kernel void matching( __global const char *restrict pattern, const int length /*length of pattern */ , __global char* restrict result )
 {
 	bool stop_processing = false;
 	int pn = get_global_id(0);

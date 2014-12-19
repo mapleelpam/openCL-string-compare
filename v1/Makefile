@@ -9,7 +9,7 @@ main.o: main.cpp
 	g++ $(AOCL_COMPILE_CONFIG) -g -o $@ -c $< -ldl
 
 dfa.aocx: dfa.cl
-	aoc -march=emulator $<
+	aoc -v --report -march=emulator $<
 
 
 run: dfa.aocx host_prog

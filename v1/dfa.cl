@@ -14,7 +14,7 @@ kernel void stop_all() {
 }
 
 
-kernel void word_processor( __global const char *text, const int length)
+kernel void word_processor( __global const char* restrict text, const int length)
 {
 	bool stop_processing = false;
 	struct AWord word;
@@ -34,7 +34,7 @@ kernel void word_processor( __global const char *text, const int length)
 	write_channel_altera(STOP, 1);
 }
 
-kernel void matching( __global const char *pattern, const int length /*length of pattern */ , __global char *result )
+kernel void matching( __global const char* restrict pattern, const int length /*length of pattern */ , __global char* restrict result )
 {
 	bool stop_processing = false;
 	while( true ) {
